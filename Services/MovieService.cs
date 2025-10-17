@@ -1,27 +1,52 @@
-﻿using Examen.Models.DTOS;
+﻿using Examen.Models;
+using Examen.Models.DTOS;
+using Examen.Repositories;
 
 namespace Examen.Services
 {
     public class MovieService : IMovieService
     {
-        public Task<bool> AddActorAsync(Guid movieId, Guid actorId, CancellationToken ct)
+        private readonly IMovieRepository _movies;
+        private readonly IActorRepository _actors;
+
+        public MovieService(IMovieRepository movies, IActorRepository actors)
         {
-            throw new NotImplementedException();
+            _movies = movies;
+            _actors = actors;
         }
 
-        public Task<MovieDto> CreateAsync(CreateMovieDto dto, CancellationToken ct)
+        public async Task<MovieDto> CreateAsync(CreateMovieDto dto, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            var entity = new Movie { Id = Guid.NewGuid(), Title = dto.Title.Trim(), DurationMin = dto.DurationMin };
+            await _movies.AddAsync(entity, ct);
+            return new MovieDto(entity.Id, entity.Title, entity.DurationMin);
         }
 
-        public Task<MovieDetailsDto?> GetDetailsAsync(Guid id, CancellationToken ct)
+        public async Task<MovieDetailsDto?> GetDetailsAsync(Guid id, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            var m = await _movies.GetDetailsAsync(id, ct);
+            if (m is null) return null;
+
+            var actors = m.MovieActors.Select(ma => new ActorDto(ma.Actor.Id, ma.Actor.FullName));
+            var upcoming = m.Screenings
+                .OrderBy(s => s.StartsAt)
+                .Take(10)
+                .Select(s => new ScreeningDto(s.Id, s.MovieId, s.HallId, s.StartsAt));
+
+            return new MovieDetailsDto(m.Id, m.Title, m.DurationMin, actors, upcoming);
+        }
+
+        public async Task<bool> AddActorAsync(Guid movieId, Guid actorId, CancellationToken ct)
+        {
+            // (Puedes dejarlo listo)
+            // Validar existencia básica (evita 500s feos)
+            if (await _movies.GetByIdAsync(movieId, ct) is null) return false;
+            if (await _actors.GetByIdAsync(actorId, ct) is null) return false;
+            return await _movies.AddActorAsync(movieId, actorId, ct);
         }
 
         public Task<bool> RemoveActorAsync(Guid movieId, Guid actorId, CancellationToken ct)
-        {
-            throw new NotImplementedException();
-        }
+            => _movies.RemoveActorAsync(movieId, actorId, ct);
     }
+
 }
