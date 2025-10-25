@@ -1,6 +1,6 @@
 ﻿# 🎬 EXAMEN PRÁCTICO – ARQUITECTURA POR CAPAS, EF CORE Y RELACIONES
 🕒 Duración total: 2 horas
-✅ Modalidad: Individual – con código en computadora
+✅ Modalidad: Grupal – con código en computadora
 ## 🧠 Temas evaluados:
 
 	Arquitectura por capas (Controllers, Services, Repositories, DbContext)
